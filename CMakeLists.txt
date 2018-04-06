@@ -22,8 +22,10 @@ catkin_package()
 include_directories( include ${catkin_INCLUDE_DIRS})
 
 add_executable(search src/search.cpp)
+add_executable(getLogicalCamera src/getLogicalCamera.cpp)
 
 target_link_libraries(search ${catkin_LIBRARIES})
+target_link_libraries(getLogicalCamera ${catkin_LIBRARIES})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

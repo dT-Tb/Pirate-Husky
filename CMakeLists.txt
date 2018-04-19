@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   amcl
   geometry_msgs
+  logical_camera_plugin
 )
 
 catkin_package()

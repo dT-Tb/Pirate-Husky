@@ -29,7 +29,7 @@ int main(int argc,char **argv)
 	ros::init(argc,argv,"getLogicalCamera");
 	ros::NodeHandle nh;
 
-	ros::Subscriber subPose = nh.subscribe("/objectDetected",1000, &lcMessageReceived);
+	ros::Subscriber subPose = nh.subscribe("/objectsDetected",1000, &lcMessageReceived);
 
 	ros::spin();
 	return 0;

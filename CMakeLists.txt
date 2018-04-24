@@ -19,13 +19,15 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package()
-include_directories( include ${catkin_INCLUDE_DIRS})
+include_directories( include ${catkin_INCLUDE_DIRS} )
 
 add_executable(search src/search.cpp)
-add_executable(getLogicalCamera src/getLogicalCamera.cpp)
+#add_executable(getLogicalCamera src/getLogicalCamera.cpp)
+add_executable(uncertainty src/uncertainty.cpp)
 
 target_link_libraries(search ${catkin_LIBRARIES})
-target_link_libraries(getLogicalCamera ${catkin_LIBRARIES})
+#target_link_libraries(getLogicalCamera ${catkin_LIBRARIES})
+target_link_libraries(uncertainty ${catkin_LIBRARIES})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -131,7 +133,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
 # include
-  ${catkin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}${Eigen_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library

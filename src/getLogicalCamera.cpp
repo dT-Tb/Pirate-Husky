@@ -1,7 +1,6 @@
 #include <ros/ros.h>
 #include <logical_camera_plugin/logicalImage.h>
 
-
 void lcMessageReceived(const logical_camera_plugin::logicalImage &msg) {
 /*
 	msg.modelName;

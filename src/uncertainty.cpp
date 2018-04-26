@@ -1,26 +1,28 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <cmath>
-#include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
 
 using namespace Eigen;
 using namespace std;
 
 void ekfMessageReceived(const nav_msgs::Odometry &msg) {
-	ROS_INFO_STREAM("Recieved: " << msg.pose.covariance);
+	//ROS_INFO_STREAM("Recieved: " << msg.pose.covariance);
 
-	Matrix<float, 3, 3> A(3, 3);
+	Matrix3f A(3, 3);
 
-	for (int i = 0; i < 6; i++) {
-		for (int j = 0; j < 6; j++) {
-			int pos = 6*i + j;
-			if (msg.pose.covariance[pos] > 0) {
-				A(i, j) = msg.pose.covariance[pos];
-			}
-		}
-	}
+	//these indexs of cov represent the x, y, and yaw (1, 2, 6 of 6x6 matrix)
+	A(0, 0) = msg.pose.covariance[0];
+	A(0, 1) = msg.pose.covariance[1];
+	A(0, 2) = msg.pose.covariance[5];
+	A(1, 0) = msg.pose.covariance[6];
+	A(1, 1) = msg.pose.covariance[7];
+	A(1, 2) = msg.pose.covariance[11];
+	A(2, 0) = msg.pose.covariance[30];
+	A(2, 1) = msg.pose.covariance[31];
+	A(2, 2) = msg.pose.covariance[35];
 
-	EigenSolver< Matrix<float, 3, 3> > es(A);
+	EigenSolver< Matrix3f > es(A);
 
 	complex<double> lambda1 = es.eigenvalues()[0];
 	complex<double> lambda2 = es.eigenvalues()[1];

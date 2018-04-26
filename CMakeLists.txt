@@ -17,7 +17,11 @@ find_package(catkin REQUIRED COMPONENTS
   amcl
   geometry_msgs
   logical_camera_plugin
+
+  cmake_modules REQUIRED
 )
+#find_package(cmake_modules REQUIRED)
+find_package(Eigen REQUIRED)
 
 catkin_package()
 include_directories( include ${catkin_INCLUDE_DIRS} )
@@ -134,7 +138,8 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
 # include
-  ${catkin_INCLUDE_DIRS}${Eigen_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+  ${Eigen_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library

@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   amcl
   geometry_msgs
+  sensor_msgs
   logical_camera_plugin
 )
 
@@ -24,9 +25,11 @@ include_directories( include ${catkin_INCLUDE_DIRS})
 
 add_executable(search src/search.cpp)
 add_executable(getLogicalCamera src/getLogicalCamera.cpp)
+add_executable(obstacle_detection src/obstacle_detection.cpp)
 
 target_link_libraries(search ${catkin_LIBRARIES})
 target_link_libraries(getLogicalCamera ${catkin_LIBRARIES})
+target_link_libraries(obstacle_detection ${catkin_LIBRARIES})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

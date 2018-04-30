@@ -20,4 +20,6 @@ int main(int argc, char** argv)
 
     laser_pub = nh.advertise<std_msgs::Float32>("/collisionDetection", 1000);
     laser_sub = nh.subscribe("/scan", 1000, &LaserHandler);
+
+    ros::spin();
 }

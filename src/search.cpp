@@ -6,8 +6,10 @@ bool searching = 1;
 
 void obstacleAvoidance(const std_msgs::Float32& msg)
 {
-    if(msg.data < 0.5)
+    if(msg.data < 0.5){
         searching = 0;
+        ROS_INFO_STREAM("Avoidance active");
+    }
 }
 
 int main(int argc, char** argv)

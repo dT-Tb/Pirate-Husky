@@ -25,12 +25,10 @@ include_directories( include ${catkin_INCLUDE_DIRS})
 
 add_executable(search src/search.cpp)
 add_executable(getLogicalCamera src/getLogicalCamera.cpp)
-add_executable(obstacle_detection src/obstacle_detection.cpp)
 add_executable(huskyPose src/huskyPose.cpp)
 
 target_link_libraries(search ${catkin_LIBRARIES})
 target_link_libraries(getLogicalCamera ${catkin_LIBRARIES})
-target_link_libraries(obstacle_detection ${catkin_LIBRARIES})
 target_link_libraries(huskyPose ${catkin_LIBRARIES})
 
 ## System dependencies are found with CMake's conventions

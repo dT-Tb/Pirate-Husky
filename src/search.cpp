@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
+#include <std_msgs/Float32.h>
 
 ros::Subscriber obst_det_sub;
 bool searching = 1;

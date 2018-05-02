@@ -1,7 +1,6 @@
 #include "ros/ros.h"
 #include <tf/transform_listener.h>
 #include <iostream>
-// this file gets robots pose
 
 int main(int argc, char **argv){
 
@@ -26,5 +25,4 @@ int main(int argc, char **argv){
     rate.sleep();
   }
   ROS_ERROR("404 Error lol ;)");
-  return 0;
 }

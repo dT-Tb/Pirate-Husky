@@ -12,28 +12,30 @@ bool rightSideClose = 0;
 
 void LaserHandler(const sensor_msgs::LaserScan& msg)
 {
-    float frontrange = msg.ranges[msg.ranges.size() / 2];
-    for(int i = 30; i < 90; i++)
+    for(int i = 60; i < msg.ranges.size()/2; i++)
     {
-        if(msg.ranges[i] < 2)
+        if(msg.ranges[i] < 1.5)
         {
             searching = 0;
             leftSideClose = 1;
             ROS_INFO_STREAM("Avoiding Left");
+            goto yeboi;
         }
     }
 	
-	for(int i = 91; i <= 150; i++)
+	for(int i = msg.ranges.size()/2; i <= 120; i++)
     {
-        if(msg.ranges[i] < 2)
+        if(msg.ranges[i] < 1.5)
         {
             searching = 0;
             rightSideClose = 1;
             ROS_INFO_STREAM("Avoiding Left");
+            goto yeboi;
         }
     }
 
-    if(frontrange < 2){
+yeboi:
+    if(leftSideClose || rightSideClose){
         searching = 0;
         ROS_INFO_STREAM("Avoidance active");
     }
@@ -47,7 +49,7 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "search");
     ros::NodeHandle nh;
-    ros::Rate rate(15);
+    ros::Rate rate(10);
     
     pirate_move_pub = nh.advertise<geometry_msgs::Twist>("/husky_velocity_controller/cmd_vel", 1000);
     laser_sub = nh.subscribe("/scan", 1000, &LaserHandler);
@@ -72,20 +74,25 @@ int main(int argc, char** argv)
             avoid.linear.x = 0;
             if(leftSideClose && rightSideClose)
             {
-                avoid.angular.z = -0.5;
+                avoid.angular.z = 0.5;
                 leftSideClose = 0;
                 rightSideClose = 0;
+                ROS_INFO_STREAM("both");
             }
             else if(leftSideClose){
             	avoid.angular.z = -0.5;
             	leftSideClose = 0;
+                ROS_INFO_STREAM("left");
             }
             else if(rightSideClose){
             	avoid.angular.z = 0.5;
             	rightSideClose = 0;
+                ROS_INFO_STREAM("right");
             }
-            else
-            	avoid.angular.z = -0.5;
+            else{
+            	avoid.angular.z = 0.5;
+                ROS_INFO_STREAM("none");
+            }
              
             pirate_move_pub.publish(avoid);
         }

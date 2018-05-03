@@ -7,42 +7,37 @@ ros::Subscriber laser_sub;
 ros::Publisher pirate_move_pub;
 
 bool searching = 1;
-bool leftSideClose = 0;
-bool rightSideClose = 0;
 
+// Receives the laser scan data
+// 
+// Will determine whethere there is an obstacle to avoid or not
+// If an obstacle is detected, then avoidance is handled immediately
+//  and the robot is flagged to stop searching
 void LaserHandler(const sensor_msgs::LaserScan& msg)
 {
-    for(int i = 60; i < msg.ranges.size()/2; i++)
+    for(int i = 30; i <= (msg.ranges.size() - 30); i++)
     {
-        if(msg.ranges[i] < 1.5)
+        if(msg.ranges[i] < 1)
         {
             searching = 0;
-            leftSideClose = 1;
-            ROS_INFO_STREAM("Avoiding Left");
-            goto yeboi;
-        }
-    }
-	
-	for(int i = msg.ranges.size()/2; i <= 120; i++)
-    {
-        if(msg.ranges[i] < 1.5)
-        {
-            searching = 0;
-            rightSideClose = 1;
-            ROS_INFO_STREAM("Avoiding Left");
-            goto yeboi;
+            geometry_msgs::Twist avoid_cmd;
+            avoid_cmd.linear.x = 0.0;
+            
+            if(i < msg.ranges.size() / 2){
+                avoid_cmd.angular.z = -0.5;
+                ROS_INFO_STREAM("Avoiding Left");
+            }
+            else{
+                avoid_cmd.angular.z = 0.5;
+                ROS_INFO_STREAM("Avoiding Right");
+            }
+
+            pirate_move_pub.publish(avoid_cmd);
+            return;
         }
     }
 
-yeboi:
-    if(leftSideClose || rightSideClose){
-        searching = 0;
-        ROS_INFO_STREAM("Avoidance active");
-    }
-    else{
-        searching = 1;
-        ROS_INFO_STREAM("Searching active");
-    }
+    searching = 1;
 }
 
 int main(int argc, char** argv)
@@ -57,8 +52,9 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
         ros::spinOnce();
-
-        if(searching)   // Looking for treasures
+        
+        // Currently searching and not avoiding
+        if(searching) 
         {
             // do the thing
             geometry_msgs::Twist explore;
@@ -66,36 +62,7 @@ int main(int argc, char** argv)
             explore.angular.z = 0;
 
             pirate_move_pub.publish(explore); 
-        }
-        else    // Obstacle avoidance
-        {
-            // dont hit the thing 
-            geometry_msgs::Twist avoid;
-            avoid.linear.x = 0;
-            if(leftSideClose && rightSideClose)
-            {
-                avoid.angular.z = 0.5;
-                leftSideClose = 0;
-                rightSideClose = 0;
-                ROS_INFO_STREAM("both");
-            }
-            else if(leftSideClose){
-            	avoid.angular.z = -0.5;
-            	leftSideClose = 0;
-                ROS_INFO_STREAM("left");
-            }
-            else if(rightSideClose){
-            	avoid.angular.z = 0.5;
-            	rightSideClose = 0;
-                ROS_INFO_STREAM("right");
-            }
-            else{
-            	avoid.angular.z = 0.5;
-                ROS_INFO_STREAM("none");
-            }
-             
-            pirate_move_pub.publish(avoid);
-        }
+        } 
         
         rate.sleep();
     }

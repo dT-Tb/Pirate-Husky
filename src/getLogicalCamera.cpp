@@ -23,7 +23,7 @@ void lcMessageReceived(const logical_camera_plugin::logicalImage &msg) {
 	transform1.setRotation( tf::Quaternion(msg.pose_rot_x, msg.pose_rot_y, msg.pose_rot_z, msg.pose_rot_z) );
 	br.sendTransform(tf::StampedTransform(transform1, ros::Time::now(), "base_link", msg.modelName));
 
-	listener.lookupTransform("map", msg.modelName, ros::Time(0), transform2);
+	listener.lookupTransform("/map", msg.modelName, ros::Time(0), transform2);
 
 	ROS_INFO_STREAM("modelName: " << msg.modelName);
 	ROS_INFO_STREAM("msg.pose_pos_x: " << transform2.getOrigin().x());

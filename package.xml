@@ -54,6 +54,7 @@
   <build_export_depend>roscpp</build_export_depend>
   <exec_depend>roscpp</exec_depend>
   <depend>logical_camera_plugin</depend>
+  <depend>random_numbers</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

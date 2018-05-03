@@ -5,114 +5,59 @@
 #include <geometry_msgs/Point.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Pose2D.h>
+#include "std_msgs/Bool.h"
 #include <vector>
 #include <cstdlib>
 
 
 #define Pi 3.1415926
 
-struct Treasure
-{
-    double x,y,z;
-    bool visited;
-
-    void newTargets()
-    {
-        if(visited)
-        {
-            x = (double) (rand()%5 +1)*-1;
-            y = (double) (rand()%8 +1)*-1;
-            z = 0.1;
-            visited = false;
-        }
-        else
-        {
-            x = (double) (rand()%8 +1);
-            y = (double) (rand()%8 +1);
-            z = 0.1;
-            visited = true;
-        }
-    }
-};
-
-// std::vector<waypoints> v(4);
-Treasure newTarget;
 bool intransit = false;
-bool avoid;
+// bool avoid;
+bool wait;
 
-void generateWaypoints()
+double trgt_X, trgt_Y, trgt_T;
+
+void gotToPose(const geometry_msgs::Pose2D msg)
 {
-       newTarget.x = (double)(rand()%8+1);
-       newTarget.y = (double)(rand()%7+1);
-       newTarget.z = 0.1;
-       newTarget.visited = false;
-}
-void printGoal()
-{
-    ROS_INFO_STREAM("Target X: " << newTarget.x);
-    ROS_INFO_STREAM("Target Y: " << newTarget.y);
-    ROS_INFO_STREAM("Target Theta: " << newTarget.z);
+    trgt_X = msg.x;
+    trgt_Y = msg.y;
+    trgt_T = msg.theta;
+    wait = true;    
 }
 
-void laserFeed(const sensor_msgs::LaserScan::ConstPtr& msg)
-{
-    if(msg->ranges[90] < 0.5)
-    {
-        // range = msg->ranges[90];
-        avoid = true;
-    }
-    else
-    {
-        avoid = false;
-    }
-}
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "huskyExplore");
     ros::NodeHandle nh;
 
+    ros::Subscriber pointSub = nh.subscribe("/MORE", 1000, gotToPose);
+    ros::Publisher pub = nh.advertise<std_msgs::Bool>("anotherOne", 1000);
+
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>ac("move_base",true);
     ROS_INFO_STREAM("Waiting on server my dude...");
 
-    ros::Subscriber sub = nh.subscribe("/scan", 1000, laserFeed);
-    
-    ros::Publisher pub 
-      = nh.advertise<geometry_msgs::Twist>("/husky_velocity_controller/cmd_vel",1000);
-    
-    // generateWaypoints();
-    newTarget.newTargets();
+    // ros::Subscriber sub = nh.subscribe("/scan", 1000, laserFeed);
+
     while (!ac.waitForServer()){/*waiting for server to connect*/}  
+    std_msgs::Bool ARG;
     
     ros::Rate rate(10);
-    if(avoid) {
-        ac.cancelAllGoals();
-        intransit = false;    
-    }
-    while(avoid && nh.ok())
-    {
-         float mm = Pi/6;
-         geometry_msgs::Twist movement;
-         movement.linear.x = 0.0;
-         movement.angular.z = mm;
-         mm += Pi/9;
-         pub.publish(movement);
-         rate.sleep();
-         ros::spinOnce();
-    }
-    while(intransit){
+    
+    while(!wait){
         rate.sleep();
         ros::spinOnce();
     }
+    
     move_base_msgs::MoveBaseGoal waypoint;
     
     waypoint.target_pose.header.frame_id = "map";
     waypoint.target_pose.header.stamp = ros::Time::now();
-    waypoint.target_pose.pose.position.x = newTarget.x;
-    waypoint.target_pose.pose.position.y = newTarget.y;
-    waypoint.target_pose.pose.orientation.w = newTarget.z;
-    
-    printGoal();
-    
+    waypoint.target_pose.pose.position.x = trgt_X;
+    waypoint.target_pose.pose.position.y = trgt_Y;
+    waypoint.target_pose.pose.orientation.w = trgt_T;
+
     ac.sendGoal(waypoint);
     intransit = true;
 
@@ -121,12 +66,18 @@ int main(int argc, char **argv)
 	{
         ROS_INFO_STREAM("Success we made it to the target");
         intransit = false;		
+        wait = false;
+        ARG.data = true;
+        pub.publish(ARG);
         ac.cancelAllGoals();
     }
 	else
     {
         ROS_INFO_STREAM("Failure");
         intransit = false;
+        wait = false;
+        ARG.data = true;
+        pub.publish(ARG);
         ac.cancelAllGoals();				
     }    
     ros::spin();

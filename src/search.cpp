@@ -21,7 +21,6 @@ void LaserHandler(const sensor_msgs::LaserScan& msg)
         {
             searching = 0;
             geometry_msgs::Twist avoid_cmd;
-            avoid_cmd.linear.x = 0.0;
             
             if(i < msg.ranges.size() / 2){
                 avoid_cmd.angular.z = -0.5;

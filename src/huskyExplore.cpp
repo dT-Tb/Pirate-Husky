@@ -103,6 +103,15 @@ int main(int argc, char **argv)
                 inform.data = false;
                 Intransit.publish(inform);
             }
+            else if(ac.waitForResult(ros::Duration(5.0)))
+            {
+                ROS_INFO_STREAM("Robot Stuck? Going to Search portocol!!");
+                intransit = false;
+                wait = false;
+                ac.cancelAllGoals();				
+                inform.data = false;
+                Intransit.publish(inform);
+            }
             else
 
                 ROS_INFO_STREAM("Better luck next time");

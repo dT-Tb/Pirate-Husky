@@ -14,8 +14,7 @@
 #define Pi 3.1415926
 
 bool intransit = false;
-// bool avoid;
-bool wait;
+bool wait = false;
 
 double trgt_X, trgt_Y, trgt_T;
 
@@ -24,6 +23,9 @@ void gotToPose(const geometry_msgs::Pose2D msg)
     trgt_X = msg.x;
     trgt_Y = msg.y;
     trgt_T = msg.theta;
+    ROS_INFO_STREAM("Sub x:"<< trgt_X);
+    ROS_INFO_STREAM("Sub y:"<< trgt_Y);
+    ROS_INFO_STREAM("Sub t:"<< trgt_T);
     wait = true;    
 }
 
@@ -32,24 +34,32 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "huskyExplore");
     ros::NodeHandle nh;
 
-    ros::Subscriber pointSub = nh.subscribe("/MORE", 1000, gotToPose);
-    ros::Publisher pub = nh.advertise<std_msgs::Bool>("anotherOne", 1000);
-
+    ros::Subscriber pointSub = nh.subscribe("Waypoints", 1000, gotToPose);
+    
+    ros::Publisher pub = nh.advertise<std_msgs::Bool>("/MORE", 1000);
+    
+    ros::Publisher stop = nh.advertise<std_msgs::Bool>("NoMore", 1000);
+    
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>ac("move_base",true);
     ROS_INFO_STREAM("Waiting on server my dude...");
 
     // ros::Subscriber sub = nh.subscribe("/scan", 1000, laserFeed);
 
     while (!ac.waitForServer()){/*waiting for server to connect*/}  
-    std_msgs::Bool ARG;
-    
-    ros::Rate rate(10);
+    ROS_INFO_STREAM("Waiting on points");
+    ros::Rate rate(15);
     
     while(!wait){
         rate.sleep();
         ros::spinOnce();
     }
+    ROS_INFO_STREAM("Moving to Dest");
     
+    std_msgs::Bool Stp;
+    
+    Stp.data = true;
+    stop.publish(Stp);
+
     move_base_msgs::MoveBaseGoal waypoint;
     
     waypoint.target_pose.header.frame_id = "map";
@@ -60,6 +70,7 @@ int main(int argc, char **argv)
 
     ac.sendGoal(waypoint);
     intransit = true;
+    std_msgs::Bool ARG;
 
     ac.waitForResult();
     if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)        
@@ -68,17 +79,19 @@ int main(int argc, char **argv)
         intransit = false;		
         wait = false;
         ARG.data = true;
-        pub.publish(ARG);
         ac.cancelAllGoals();
+        ROS_INFO_STREAM("Requesting new points");
+        pub.publish(ARG);
     }
 	else
     {
-        ROS_INFO_STREAM("Failure");
+        ROS_INFO_STREAM("Better luck next time");
         intransit = false;
         wait = false;
         ARG.data = true;
-        pub.publish(ARG);
         ac.cancelAllGoals();				
+        pub.publish(ARG);
+        ROS_INFO_STREAM("Requesting new points");
     }    
     ros::spin();
     

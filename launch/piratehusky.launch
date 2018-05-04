@@ -1,0 +1,5 @@
+<launch>
+    <node
+        pkg = "treasure-hunter"
+        type ="search"
+        name=>

@@ -5,6 +5,7 @@
 #include <random_numbers/random_numbers.h>
 #include <geometry_msgs/Twist.h>
 #include <stdlib.h> 
+
 ros::Subscriber laser_sub;          // Subscribe to laser range finder
 ros::Subscriber goal_status_sub;    // Subscribe to the current goal state
 ros::Publisher pirate_move_pub;     // Publish move commands to the robot
@@ -26,9 +27,9 @@ bool obstaceRight = 0;  // Let robot know if it should move to left
 //  and the robot is flagged to stop searching
 void LaserHandler(const sensor_msgs::LaserScan& msg)
 {
-    for(int i = 45; i <= (msg.ranges.size() - 45); i++)
+    for(int i = 30; i <= (msg.ranges.size() - 30); i++)
     {
-        if(msg.ranges[i] < 1)
+        if(msg.ranges[i] < 1 && msg.ranges[i] > 0.2)
         {
             
             // We are in 'avoidance mode' and not 'search mode'
@@ -83,19 +84,24 @@ int main(int argc, char** argv)
             geometry_msgs::Twist explore;
         
             // go forward
-            ROS_INFO_STREAM("Moving Forward");
+            
             explore.linear.x = 0.5;
             if(obstaceLeft)
             {
+                ROS_INFO_STREAM("Moving Forward: R");
                 explore.angular.z = 0.3;
             }
-            else if(obstaceRight)
+            if(obstaceRight)
             {
                 explore.angular.z = -0.3;
+                ROS_INFO_STREAM("Moving Forward: L");
             }
-            else 
+            if( (counter ) % 33 == 0)
             {
                 explore.angular.z =0.0;
+                obstaceLeft = 0;
+                obstaceRight = 0; 
+                ROS_INFO_STREAM("Moving Forward: S");
             }
 
             pirate_move_pub.publish(explore); 

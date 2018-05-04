@@ -46,19 +46,15 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     ros::Subscriber pointSub = nh.subscribe("Waypoints", 1000, gotToPose);
-    
-    ros::Publisher pub = nh.advertise<std_msgs::Bool>("/MORE", 1000);
-    
-    ros::Publisher stop = nh.advertise<std_msgs::Bool>("NoMore", 1000);
-    
     ros::Subscriber avoidance = nh.subscribe("/obstacleDetected", 1000, DoNothing);
     
     ros::Publisher Intransit = nh.advertise<std_msgs::Bool>("/goalStatus",1000);
+    ros::Publisher pub = nh.advertise<std_msgs::Bool>("/MORE", 1000);
+    ros::Publisher stop = nh.advertise<std_msgs::Bool>("NoMore", 1000);
 
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>ac("move_base",true);
     ROS_INFO_STREAM("Waiting on server my dude...");
 
-    // ros::Subscriber sub = nh.subscribe("/scan", 1000, laserFeed);
 
     while (!ac.waitForServer()){/*waiting for server to connect*/}  
     ROS_INFO_STREAM("Waiting on points");
@@ -108,7 +104,7 @@ int main(int argc, char **argv)
                 Intransit.publish(inform);
             }
             else
-            {
+
                 ROS_INFO_STREAM("Better luck next time");
                 intransit = false;
                 wait = false;
@@ -119,7 +115,6 @@ int main(int argc, char **argv)
                 inform.data = false;
                 Intransit.publish(inform);
             }  
-            // ros::spinOnce();  
         }
         if(avoid)
         { // do nothing until told so 
@@ -128,10 +123,7 @@ int main(int argc, char **argv)
             Intransit.publish(info);
             ros::spinOnce();
         }
-        ros::spinOnce();
-    }
-    ros::spin();
+    }// end while
     
-    return 0;
 }
 

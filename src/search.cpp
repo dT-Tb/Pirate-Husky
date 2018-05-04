@@ -15,6 +15,10 @@ random_numbers::RandomNumberGenerator *RNG;
 
 bool searching = 1;     // If the robot is in 'search mode' or not
 
+bool obstaceLeft = 0;   // Let robot know if it should move to right
+bool obstaceRight = 0;  // Let robot know if it should move to left 
+// both of these are based on the sensor readings
+
 // Receives the laser scan data
 // 
 // Will determine whethere there is an obstacle to avoid or not
@@ -35,12 +39,16 @@ void LaserHandler(const sensor_msgs::LaserScan& msg)
             if(i < msg.ranges.size() / 2){
                 avoid_cmd.angular.z = -0.5;
                 // avoid_cmd.linear.x = 0.0;
+                obstaceRight = 1;
+                obstaceLeft  = 0;
                 ROS_INFO_STREAM("Avoiding Left");
             }
             else{
                 // avoid_cmd.linear.x = 0.0;
                 avoid_cmd.angular.z = 0.5;
                 ROS_INFO_STREAM("Avoiding Right");
+                obstaceRight = 0;
+                obstaceLeft  = 1;
             }
 
             pirate_move_pub.publish(avoid_cmd);
@@ -50,29 +58,6 @@ void LaserHandler(const sensor_msgs::LaserScan& msg)
     // once obstacel has been avoided then we continue with
     // search protocol
     searching = 1;
-}
-void moveLeft()
-{
-    geometry_msgs::Twist Left;
-    ROS_INFO_STREAM("RNG:Moving Left");
-    for(int i =0; i < 100; i ++)
-    {
-        // Left.linear.x = 0.0;
-        Left.angular.z = -0.5;
-        pirate_move_pub.publish(Left);
-    }
-}
-
-void moveRight()
-{
-    geometry_msgs::Twist Right;
-    ROS_INFO_STREAM("RNG:Moving Right");
-    for(int i =0; i < 100; i ++)
-    {
-        // Right.linear.x = 0.0;
-        Right.angular.z = 0.5;
-        pirate_move_pub.publish(Right);
-    }
 }
 
 int main(int argc, char** argv)
@@ -84,7 +69,7 @@ int main(int argc, char** argv)
     pirate_move_pub = nh.advertise<geometry_msgs::Twist>("/husky_velocity_controller/cmd_vel", 1000);
 
     laser_sub = nh.subscribe("/scan", 1000, &LaserHandler);
-    
+    int counter = 0;
     while(ros::ok())
     {
         ros::spinOnce();
@@ -96,28 +81,27 @@ int main(int argc, char** argv)
             // In 'search mode' we simply move forward slowly and try
             //  to detect things with the logical camera
             geometry_msgs::Twist explore;
-            int tmp1, tmp2;
-            tmp1 = rand();
-            if(tmp1 % 23 == 0)
+        
+            // go forward
+            ROS_INFO_STREAM("Moving Forward");
+            explore.linear.x = 0.5;
+            if(obstaceLeft)
             {
-                // move the robot to the right
-                moveRight();
+                explore.angular.z = 0.3;
             }
-            else if(tmp1 % 15 == 0)
+            else if(obstaceRight)
             {
-                // move the robot left and go straight
-                moveLeft();
+                explore.angular.z = -0.3;
             }
             else 
             {
-                // go forward
-                ROS_INFO_STREAM("Moving Forward");
-                explore.linear.x = 0.5;
-                explore.angular.z = 0;
-                pirate_move_pub.publish(explore); 
-
+                explore.angular.z =0.0;
             }
-        } 
+
+            pirate_move_pub.publish(explore); 
+            
+            counter++; 
+        }
         
         rate.sleep();
     }

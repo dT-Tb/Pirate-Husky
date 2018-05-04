@@ -1,5 +1,21 @@
+<?xml version="1.0"?>
 <launch>
     <node
-        pkg = "treasure-hunter"
+        pkg = "treasure_hunter"
         type ="search"
-        name=>
+        name="search"
+        launch-prefix="gnome-terminal -e"
+    />
+    <node
+        pkg = "treasure_hunter"
+        type ="getLogicalCamera"
+        name="getLogicalCamera"
+        launch-prefix="gnome-terminal -e"
+    />
+    <node
+        pkg = "treasure_hunter"
+        type ="huskyPose"
+        name="huskyPose"
+        launch-prefix="gnome-terminal -e"
+    />
+</launch>

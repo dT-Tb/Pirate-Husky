@@ -19,6 +19,7 @@ bool searching = 1;     // If the robot is in 'search mode' or not
 bool obstaceLeft = 0;   // Let robot know if it should move to right
 bool obstaceRight = 0;  // Let robot know if it should move to left 
 // both of these are based on the sensor readings
+int counter = 0;
 
 // Receives the laser scan data
 // 
@@ -38,20 +39,26 @@ void LaserHandler(const sensor_msgs::LaserScan& msg)
             
             // Turn CW or CCW depending on where the obstacle was detected
             if(i < msg.ranges.size() / 2){
+                avoid_cmd.angular.z = 0.0;
+                avoid_cmd.linear.x = 0.0;
+                pirate_move_pub.publish(avoid_cmd);
                 avoid_cmd.angular.z = -0.5;
-                // avoid_cmd.linear.x = 0.0;
+                avoid_cmd.linear.x = 0.0;
+                
                 obstaceRight = 1;
                 obstaceLeft  = 0;
                 ROS_INFO_STREAM("Avoiding Left");
             }
             else{
-                // avoid_cmd.linear.x = 0.0;
+                avoid_cmd.linear.x = 0.0;
+                avoid_cmd.angular.z = 0.0;
+                pirate_move_pub.publish(avoid_cmd);
+                avoid_cmd.linear.x = 0.0;
                 avoid_cmd.angular.z = 0.5;
                 ROS_INFO_STREAM("Avoiding Right");
                 obstaceRight = 0;
                 obstaceLeft  = 1;
             }
-
             pirate_move_pub.publish(avoid_cmd);
             return;
         }
@@ -70,7 +77,6 @@ int main(int argc, char** argv)
     pirate_move_pub = nh.advertise<geometry_msgs::Twist>("/husky_velocity_controller/cmd_vel", 1000);
 
     laser_sub = nh.subscribe("/scan", 1000, &LaserHandler);
-    int counter = 0;
     while(ros::ok())
     {
         ros::spinOnce();
@@ -89,14 +95,14 @@ int main(int argc, char** argv)
             if(obstaceLeft)
             {
                 ROS_INFO_STREAM("Moving Forward: R");
-                explore.angular.z = 0.3;
+                explore.angular.z = -0.2;
             }
             if(obstaceRight)
             {
-                explore.angular.z = -0.3;
+                explore.angular.z = 0.2;
                 ROS_INFO_STREAM("Moving Forward: L");
             }
-            if( (counter ) % 33 == 0)
+            if( (counter/45) % 33 == 0)
             {
                 explore.angular.z =0.0;
                 obstaceLeft = 0;

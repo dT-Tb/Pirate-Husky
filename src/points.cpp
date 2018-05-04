@@ -18,8 +18,8 @@ void GenPoints()
         geometry_msgs::Pose2D waypoint;
         RNGJESUS = new random_numbers::RandomNumberGenerator();
         
-        x = (double) RNGJESUS->uniformInteger(-6,6);
-        y = (double) RNGJESUS->uniformInteger(-6,6);
+        x = (double) RNGJESUS->uniformInteger(-5,5);
+        y = (double) RNGJESUS->uniformInteger(-5,5);
         z = 0.1;
         ROS_INFO_STREAM("Pub x:"<< x);
         ROS_INFO_STREAM("Pub y:"<< y);

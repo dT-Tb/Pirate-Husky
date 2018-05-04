@@ -39,7 +39,7 @@ void GoalStateReceived(const std_msgs::Bool& msg)
 //  and the robot is flagged to stop searching
 void LaserHandler(const sensor_msgs::LaserScan& msg)
 {
-    for(int i = 30; i <= (msg.ranges.size() - 30); i++)
+    for(int i = 45; i <= (msg.ranges.size() - 45); i++)
     {
         if(msg.ranges[i] < 1)
         {
@@ -69,8 +69,14 @@ void LaserHandler(const sensor_msgs::LaserScan& msg)
     }
     
     // If we were previously in 'search mode' then we restore that mode
-    if(!travelling)
+    //  and tell the planner that the robot's good to go
+    if(!travelling){
+        std_msgs::Bool obstacle_detected;
+        obstacle_detected.data = 0;
+        obst_det_pub.publish(obstacle_detected);
+        
         searching = 1;
+    }
 }
 
 int main(int argc, char** argv)

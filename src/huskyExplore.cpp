@@ -48,51 +48,58 @@ int main(int argc, char **argv)
     while (!ac.waitForServer()){/*waiting for server to connect*/}  
     ROS_INFO_STREAM("Waiting on points");
     ros::Rate rate(15);
-    
-    while(!wait){
-        rate.sleep();
+
+
+    while(ros::ok())
+    { 
+        ros::spinOnce();
+        if(wait)
+        {
+            ROS_INFO_STREAM("Moving to Dest");
+            
+            std_msgs::Bool Stp;
+            
+            Stp.data = true;
+            stop.publish(Stp);
+
+            move_base_msgs::MoveBaseGoal waypoint;
+            
+            waypoint.target_pose.header.frame_id = "map";
+            waypoint.target_pose.header.stamp = ros::Time::now();
+            waypoint.target_pose.pose.position.x = trgt_X;
+            waypoint.target_pose.pose.position.y = trgt_Y;
+            waypoint.target_pose.pose.orientation.w = trgt_T;
+
+            ac.sendGoal(waypoint);
+            intransit = true;
+            std_msgs::Bool ARG;
+
+            ac.waitForResult();
+            // ros::spinOnce();  
+            if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)        
+            {
+                ROS_INFO_STREAM("Success we made it to the target");
+                intransit = false;		
+                wait = false;
+                ARG.data = true;
+                ac.cancelAllGoals();
+                ROS_INFO_STREAM("Requesting new points");
+                pub.publish(ARG);
+            }
+            else
+            {
+                ROS_INFO_STREAM("Better luck next time");
+                intransit = false;
+                wait = false;
+                ARG.data = true;
+                ac.cancelAllGoals();				
+                pub.publish(ARG);
+                ROS_INFO_STREAM("Requesting new points");
+            }  
+            // ros::spinOnce();  
+        }
         ros::spinOnce();
     }
-    ROS_INFO_STREAM("Moving to Dest");
-    
-    std_msgs::Bool Stp;
-    
-    Stp.data = true;
-    stop.publish(Stp);
-
-    move_base_msgs::MoveBaseGoal waypoint;
-    
-    waypoint.target_pose.header.frame_id = "map";
-    waypoint.target_pose.header.stamp = ros::Time::now();
-    waypoint.target_pose.pose.position.x = trgt_X;
-    waypoint.target_pose.pose.position.y = trgt_Y;
-    waypoint.target_pose.pose.orientation.w = trgt_T;
-
-    ac.sendGoal(waypoint);
-    intransit = true;
-    std_msgs::Bool ARG;
-
-    ac.waitForResult();
-    if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)        
-	{
-        ROS_INFO_STREAM("Success we made it to the target");
-        intransit = false;		
-        wait = false;
-        ARG.data = true;
-        ac.cancelAllGoals();
-        ROS_INFO_STREAM("Requesting new points");
-        pub.publish(ARG);
-    }
-	else
-    {
-        ROS_INFO_STREAM("Better luck next time");
-        intransit = false;
-        wait = false;
-        ARG.data = true;
-        ac.cancelAllGoals();				
-        pub.publish(ARG);
-        ROS_INFO_STREAM("Requesting new points");
-    }    
     ros::spin();
     
     return 0;

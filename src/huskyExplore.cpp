@@ -10,7 +10,6 @@
 #include <vector>
 #include <cstdlib>
 
-
 #define Pi 3.1415926
 
 bool intransit = false;
@@ -113,7 +112,7 @@ int main(int argc, char **argv)
                 Intransit.publish(inform);
             }
             else
-
+            {
                 ROS_INFO_STREAM("Better luck next time");
                 intransit = false;
                 wait = false;

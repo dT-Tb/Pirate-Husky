@@ -1,8 +1,7 @@
 #include <ros/ros.h>
-#include <cmath>
 #include <logical_camera_plugin/logicalImage.h>
-#include "geometry_msgs/PoseWithCovarianceStamped.h"
-#include "tf/transform_datatypes.h"
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <tf/transform_datatypes.h>
 
 double amcl_x;
 double amcl_y;
@@ -34,10 +33,5 @@ int main(int argc,char **argv)
 	ros::Subscriber amcl_sub = nh.subscribe("/amcl_pose",1000, &amclMessageReceived);
 	ros::Subscriber subPose = nh.subscribe("/objectsDetected",1000, &lcMessageReceived);
 
-	//ros::spin();
-	while (ros::ok())
-	{
-		ros::spinOnce();
-	}
-	return 0;
+	ros::spin();
 }

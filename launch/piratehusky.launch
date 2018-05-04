@@ -12,10 +12,4 @@
         name="getLogicalCamera"
         launch-prefix="gnome-terminal -e"
     />
-    <node
-        pkg = "treasure_hunter"
-        type ="huskyPose"
-        name="huskyPose"
-        launch-prefix="gnome-terminal -e"
-    />
 </launch>

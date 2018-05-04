@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   logical_camera_plugin
+  random_numbers
 )
 
 catkin_package()
@@ -26,7 +27,11 @@ include_directories( include ${catkin_INCLUDE_DIRS})
 add_executable(search src/search.cpp)
 add_executable(getLogicalCamera src/getLogicalCamera.cpp)
 add_executable(huskyPose src/huskyPose.cpp)
+add_executable(huskyExplore src/huskyExplore.cpp)
+add_executable(points src/points.cpp)
 
+target_link_libraries(points ${catkin_LIBRARIES})
+target_link_libraries(huskyExplore ${catkin_LIBRARIES})
 target_link_libraries(search ${catkin_LIBRARIES})
 target_link_libraries(getLogicalCamera ${catkin_LIBRARIES})
 target_link_libraries(huskyPose ${catkin_LIBRARIES})

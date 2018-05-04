@@ -1,48 +1,76 @@
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Bool.h>
 #include <geometry_msgs/Twist.h>
 
-ros::Subscriber laser_sub;
-ros::Publisher pirate_move_pub;
+ros::Subscriber laser_sub;          // Subscribe to laser range finder
+ros::Subscriber goal_status_sub;    // Subscribe to the current goal state
+ros::Publisher pirate_move_pub;     // Publish move commands to the robot
+ros::Publisher obst_det_pub;        // Publish state of obstacle detection
+ros::Timer search_cutoff;           // Timer to cutoff 'search mode'
 
-bool searching = 1;
-bool leftSideClose = 0;
-bool rightSideClose = 0;
+bool searching = 0;     // If the robot is in 'search mode' or not
+bool travelling = 1;    // If planner is working towards a goal state
 
+// Tells the robot to stop 'search mode' and initiate planner again
+void cutoffTimerHandler(const ros::TimerEvent&)
+{
+   searching = 0;
+   travelling = 1;
+
+   // probably need to publish to a topic here so that the robot
+   //   knows to initiate the planner again.
+}
+
+// Check whether the robot has reached its goal or not
+void GoalStateReceived(const std_msgs::Bool& msg)
+{
+    // Should only change travelling to 'false' most of the time
+    //  
+    // When goal is reached it will return 'false' as well
+    travelling = msg.data;
+}
+
+// Receives the laser scan data
+// 
+// Will determine whethere there is an obstacle to avoid or not
+// If an obstacle is detected, then avoidance is handled immediately
+//  and the robot is flagged to stop searching
 void LaserHandler(const sensor_msgs::LaserScan& msg)
 {
-    for(int i = 60; i < msg.ranges.size()/2; i++)
+    for(int i = 30; i <= (msg.ranges.size() - 30); i++)
     {
-        if(msg.ranges[i] < 1.5)
+        if(msg.ranges[i] < 1)
         {
+            // If obstacle detected, then we publish to a topic to 
+            //  describe the current state to the planner node
+            std_msgs::Bool obstacle_detected;
+            obstacle_detected.data = 1;
+            obst_det_pub.publish(obstacle_detected);
+            
+            // We are in 'avoidance mode' and not 'search mode'
             searching = 0;
-            leftSideClose = 1;
-            ROS_INFO_STREAM("Avoiding Left");
-            goto yeboi;
-        }
-    }
-	
-	for(int i = msg.ranges.size()/2; i <= 120; i++)
-    {
-        if(msg.ranges[i] < 1.5)
-        {
-            searching = 0;
-            rightSideClose = 1;
-            ROS_INFO_STREAM("Avoiding Left");
-            goto yeboi;
-        }
-    }
+            geometry_msgs::Twist avoid_cmd;
+            
+            // Turn CW or CCW depending on where the obstacle was detected
+            if(i < msg.ranges.size() / 2){
+                avoid_cmd.angular.z = -0.5;
+                ROS_INFO_STREAM("Avoiding Left");
+            }
+            else{
+                avoid_cmd.angular.z = 0.5;
+                ROS_INFO_STREAM("Avoiding Right");
+            }
 
-yeboi:
-    if(leftSideClose || rightSideClose){
-        searching = 0;
-        ROS_INFO_STREAM("Avoidance active");
+            pirate_move_pub.publish(avoid_cmd);
+            return;
+        }
     }
-    else{
+    
+    // If we were previously in 'search mode' then we restore that mode
+    if(!travelling)
         searching = 1;
-        ROS_INFO_STREAM("Searching active");
-    }
 }
 
 int main(int argc, char** argv)
@@ -52,50 +80,28 @@ int main(int argc, char** argv)
     ros::Rate rate(10);
     
     pirate_move_pub = nh.advertise<geometry_msgs::Twist>("/husky_velocity_controller/cmd_vel", 1000);
+    obst_det_pub = nh.advertise<std_msgs::Bool>("/obstacleDetected", 1000);
+    
+    goal_status_sub = nh.subscribe("/goalStatus", 1000, &GoalStateReceived);
     laser_sub = nh.subscribe("/scan", 1000, &LaserHandler);
     
+    search_cutoff = nh.createTimer( ros::Duration(30.0), cutoffTimerHandler );
+
     while(ros::ok())
     {
         ros::spinOnce();
-
-        if(searching)   // Looking for treasures
+        
+        // Currently searching and not avoiding
+        if(searching && !travelling) 
         {
-            // do the thing
+            // In 'search mode' we simply move forward slowly and try
+            //  to detect things with the logical camera
             geometry_msgs::Twist explore;
-            explore.linear.x = 0.75;
+            explore.linear.x = 0.5;
             explore.angular.z = 0;
 
             pirate_move_pub.publish(explore); 
-        }
-        else    // Obstacle avoidance
-        {
-            // dont hit the thing 
-            geometry_msgs::Twist avoid;
-            avoid.linear.x = 0;
-            if(leftSideClose && rightSideClose)
-            {
-                avoid.angular.z = 0.5;
-                leftSideClose = 0;
-                rightSideClose = 0;
-                ROS_INFO_STREAM("both");
-            }
-            else if(leftSideClose){
-            	avoid.angular.z = -0.5;
-            	leftSideClose = 0;
-                ROS_INFO_STREAM("left");
-            }
-            else if(rightSideClose){
-            	avoid.angular.z = 0.5;
-            	rightSideClose = 0;
-                ROS_INFO_STREAM("right");
-            }
-            else{
-            	avoid.angular.z = 0.5;
-                ROS_INFO_STREAM("none");
-            }
-             
-            pirate_move_pub.publish(avoid);
-        }
+        } 
         
         rate.sleep();
     }

@@ -1,38 +1,29 @@
 #include <ros/ros.h>
+#include <cmath>
 #include <logical_camera_plugin/logicalImage.h>
-#include <geometry_msgs/Pose.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "tf/transform_datatypes.h"
+
+double amcl_x;
+double amcl_y;
+double amcl_theta;
+
+void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped &msg) {
+   amcl_x = msg.pose.pose.position.x;
+   amcl_y = msg.pose.pose.position.y;
+
+   tf::Quaternion amclData;
+   quaternionMsgToTF(msg.pose.pose.orientation, amclData);
+   amcl_theta = getYaw(amclData);
+}
 
 void lcMessageReceived(const logical_camera_plugin::logicalImage &msg) {
-/*
-	msg.pose_pos_x;
-	msg.pose_pos_y;
-	msg.pose_pos_z;
-	msg.pose_rot_x;
-	msg.pose_rot_y;
-	msg.pose_rot_z;
-	msg.pose_rot_w;
-*/
-	tf::TransformBroadcaster br;
-	tf::TransformListener listener;
-	tf::Transform transform1;
-	tf::StampedTransform transform2;
 
-	transform1.setOrigin( tf::Vector3(msg.pose_pos_x, msg.pose_pos_y, msg.pose_pos_z) );
-	transform1.setRotation( tf::Quaternion(msg.pose_rot_x, msg.pose_rot_y, msg.pose_rot_z, msg.pose_rot_z) );
-	br.sendTransform(tf::StampedTransform(transform1, ros::Time::now(), "base_link", msg.modelName));
-
-	listener.lookupTransform("/map", msg.modelName, ros::Time(0), transform2);
+	float x = ( msg.pose_pos_x * cos(amcl_theta) ) - ( msg.pose_pos_y * sin(amcl_theta) ) + amcl_x;
+	float y = ( msg.pose_pos_x * sin(amcl_theta) ) + ( msg.pose_pos_y * cos(amcl_theta) ) + amcl_y;
 
 	ROS_INFO_STREAM("modelName: " << msg.modelName);
-	ROS_INFO_STREAM("msg.pose_pos_x: " << transform2.getOrigin().x());
-	ROS_INFO_STREAM("msg.pose_pos_y: " << transform2.getOrigin().y());
-	ROS_INFO_STREAM("msg.pose_pos_z: " << transform2.getOrigin().z());
-	ROS_INFO_STREAM("msg.pose_rot_x: " << transform2.getRotation().x());
-	ROS_INFO_STREAM("msg.pose_rot_y: " << transform2.getRotation().y());
-	ROS_INFO_STREAM("msg.pose_rot_z: " << transform2.getRotation().z());
-	ROS_INFO_STREAM("msg.pose_rot_w: " << transform2.getRotation().w());
+	ROS_INFO_STREAM("x: " << x << ", y: " << y);
 }
 
 int main(int argc,char **argv) 
@@ -40,8 +31,13 @@ int main(int argc,char **argv)
 	ros::init(argc,argv,"getLogicalCamera");
 	ros::NodeHandle nh;
 
+	ros::Subscriber amcl_sub = nh.subscribe("/amcl_pose",1000, &amclMessageReceived);
 	ros::Subscriber subPose = nh.subscribe("/objectsDetected",1000, &lcMessageReceived);
 
-	ros::spin();
+	//ros::spin();
+	while (ros::ok())
+	{
+		ros::spinOnce();
+	}
 	return 0;
 }

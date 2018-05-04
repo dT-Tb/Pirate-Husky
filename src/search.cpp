@@ -5,7 +5,7 @@
 ros::Subscriber laser_sub;          // Subscribe to laser range finder
 ros::Publisher pirate_move_pub;     // Publish move commands to the robot
 
-bool searching = 0;     // If the robot is in 'search mode' or not
+bool searching = 1;     // If the robot is in 'search mode' or not
 
 // Receives the laser scan data
 // 
@@ -37,11 +37,7 @@ void LaserHandler(const sensor_msgs::LaserScan& msg)
         }
     }
     
-    // If we were previously in 'search mode' then we restore that mode
-    //  and tell the planner that the robot's good to go
-    if(!travelling){
-        searching = 1;
-    }
+    searching = 1;
 }
 
 int main(int argc, char** argv)

@@ -15,6 +15,7 @@
 
 bool intransit = false;
 bool wait = false;
+bool avoid = false;
 
 double trgt_X, trgt_Y, trgt_T;
 
@@ -28,7 +29,17 @@ void gotToPose(const geometry_msgs::Pose2D msg)
     ROS_INFO_STREAM("Sub t:"<< trgt_T);
     wait = true;    
 }
-
+void DoNothing(const std_msgs::Bool no)
+{
+    if(no.data == true)
+    {
+        avoid = true;
+    }
+    if(no.data == false)
+    {
+        avoid = false;
+    }
+}
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "huskyExplore");
@@ -40,6 +51,10 @@ int main(int argc, char **argv)
     
     ros::Publisher stop = nh.advertise<std_msgs::Bool>("NoMore", 1000);
     
+    ros::Subscriber avoidance = nh.subscribe("/obstacleDetected", 1000, DoNothing);
+    
+    ros::Publisher Intransit = nh.advertise<std_msgs::Bool>("/goalStatus",1000);
+
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>ac("move_base",true);
     ROS_INFO_STREAM("Waiting on server my dude...");
 
@@ -53,12 +68,16 @@ int main(int argc, char **argv)
     while(ros::ok())
     { 
         ros::spinOnce();
-        if(wait)
+        if(wait && !avoid)
         {
             ROS_INFO_STREAM("Moving to Dest");
             
             std_msgs::Bool Stp;
+            std_msgs::Bool inform;
             
+            inform.data = true;
+            Intransit.publish(inform);
+
             Stp.data = true;
             stop.publish(Stp);
 
@@ -85,6 +104,8 @@ int main(int argc, char **argv)
                 ac.cancelAllGoals();
                 ROS_INFO_STREAM("Requesting new points");
                 pub.publish(ARG);
+                inform.data = false;
+                Intransit.publish(inform);
             }
             else
             {
@@ -95,8 +116,17 @@ int main(int argc, char **argv)
                 ac.cancelAllGoals();				
                 pub.publish(ARG);
                 ROS_INFO_STREAM("Requesting new points");
+                inform.data = false;
+                Intransit.publish(inform);
             }  
             // ros::spinOnce();  
+        }
+        if(avoid)
+        { // do nothing until told so 
+            std_msgs::Bool info;
+            info.data = false;
+            Intransit.publish(info);
+            ros::spinOnce();
         }
         ros::spinOnce();
     }
